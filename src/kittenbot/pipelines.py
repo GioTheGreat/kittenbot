@@ -1,11 +1,14 @@
+import traceback
 from typing import Coroutine, Any, Callable, Optional
 
 from telegram import Update
 
+from .actions import Action, RestrictMember, CompositeAction
+from .clock import Clock
 from .interpreter import Interpreter
 from .permissions import SecurityFunc, SecurityAction
+from .slowmode_user_repository import SlowmodeUserRepository
 from .types import HandlerFunc, TContext
-
 
 PipelineFunc = Callable[[Update, TContext], Coroutine[Any, Any, None]]
 
@@ -16,9 +19,33 @@ def pipeline(
         interpreter: Interpreter
 ) -> PipelineFunc:
     async def wrapped(update: Update, context: TContext) -> None:
-        if security(update, context) == SecurityAction.DENY:
-            return
-        if not (action := handler(update, context)):
-            return
-        await interpreter.run_action(action)
+        try:
+            if security(update, context) == SecurityAction.DENY:
+                return
+            action = handler(update, context)
+            if not action:
+                return
+            await interpreter.run_action(action)
+        except Exception as e:
+            traceback.print_exception(e)
     return wrapped
+
+
+def slowmode_support(repository: SlowmodeUserRepository, clock: Clock):
+    def wrapper(handler: HandlerFunc) -> HandlerFunc:
+        def wrapped(update: Update, context: TContext) -> Optional[Action]:
+            result = handler(update, context)
+            if not update.effective_chat or not update.effective_user:
+                return result
+            if restriction := repository.get_active_restriction(update.effective_chat.id, update.effective_user.id):
+                return CompositeAction([
+                    result,
+                    RestrictMember(
+                        update.effective_chat.id,
+                        update.effective_user.id,
+                        clock.now() + restriction.interval)
+                ])
+            else:
+                return result
+        return wrapped
+    return wrapper

@@ -1,4 +1,5 @@
-from typing import List
+from datetime import datetime, timedelta
+from typing import List, Optional
 
 from sqlalchemy import ForeignKey, Table, Column
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -27,5 +28,14 @@ class User(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True, unique=True)
-    username: Mapped[str] = mapped_column(unique=True)
+    username: Mapped[Optional[str]] = mapped_column()
     chats: Mapped[List[Chat]] = relationship(secondary=chat_users, back_populates="users")
+
+
+class SlowmodeUser(Base):
+    __tablename__ = "slowmode_user"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("chat.id"), primary_key=True)
+    interval: Mapped[timedelta] = mapped_column()
+    until_date: Mapped[Optional[datetime]] = mapped_column()

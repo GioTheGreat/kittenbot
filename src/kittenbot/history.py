@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import Optional, List
 
 from attr import define
-from sqlalchemy import Engine, select, exists
+from sqlalchemy import Engine, select, exists, insert
 from sqlalchemy.orm import Session, joinedload
 from telegram import Message
 
@@ -13,9 +13,6 @@ class History:
     engine: Engine
 
     def store(self, message: Message) -> None:
-        entities.User.metadata.create_all(self.engine, checkfirst=True)
-        entities.Chat.metadata.create_all(self.engine, checkfirst=True)
-        entities.chat_users.metadata.create_all(self.engine, checkfirst=True)
         with Session(self.engine) as session:
             chat = entities.Chat(id=message.chat_id)
             is_new_chat = self._is_new_chat(session, message)
@@ -23,17 +20,31 @@ class History:
                 print(f"adding new chat id {chat.id}")
                 session.add(chat)
             user = self._get_user_by_id(session, message.from_user.id)
-            if user:
-                if not is_new_chat and not any(user_chat.id == chat.id for user_chat in user.chats):
-                    user.chats.append(chat)
-            else:
-                user = entities.User(id=message.from_user.id, chats=[chat], username=message.from_user.username)
-                print(f"adding new user {user.id}")
+            if not user:
+                user = entities.User(id=message.from_user.id, username=message.from_user.username)
                 session.add(user)
+
+            is_known_relation_user_to_chat = session.query(
+                exists(entities.chat_users)
+                .where(entities.chat_users.c.chat_id == chat.id
+                       and entities.chat_users.c.user_id == user.id)
+            )
+
+            if not is_known_relation_user_to_chat:
+                session.execute(
+                    insert(entities.chat_users)
+                    .values(chat_id=chat.id, user_id=user.id)
+                )
+
             session.commit()
 
-    def get_user_id(self, username: str) -> Optional[int]:
+    def get_user_id(self, username: str) -> List[int]:
         statement = select(entities.User.id).where(entities.User.username == username)
+        with Session(self.engine) as session:
+            return list(session.execute(statement).scalars())
+
+    def get_user_name(self, user_id: int) -> Optional[str]:
+        statement = select(entities.User.username).where(entities.User.id == user_id)
         with Session(self.engine) as session:
             return session.execute(statement).scalar()
 

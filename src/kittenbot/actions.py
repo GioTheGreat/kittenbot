@@ -1,5 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional, List
 
 from telegram import Message
 
@@ -32,3 +34,18 @@ class Action(ABC):
 class Reply(Action):
     reply_to: Message
     content: ReplyContent
+
+
+@dataclass
+class RestrictMember(Action):
+    chat_id: int
+    user_id: int
+    until_date: Optional[datetime]
+
+
+@dataclass(init=False)
+class CompositeAction(Action):
+    actions: List[Action]
+
+    def __init__(self, actions: List[Optional[Action]]):
+        self.actions = [action for action in actions if action]

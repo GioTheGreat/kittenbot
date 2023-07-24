@@ -39,6 +39,9 @@ class KittenMessageHandler:
         self._accusative_pattern = re.compile(noun_template.substitute(subj=r"(?P<subj>\w+)"))
         self._bot_name_pattern = re.compile("(" + "|".join(name + "ы?" for name in bot_names) + ")")
 
+    def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Action]:
+        return self.handle(update, context)
+
     def handle(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Action]:
         if update.message is None or update.message.text is None:
             return None
