@@ -22,6 +22,7 @@ class ToTemplateCaster(AbstractCaster):
 
 class BotConfig(Config):
     token: str = field("token")
+    db_connection_string: str = field("db_connection_string", default="sqlite:///bot.sqlite")
     probability: float = field("probability", default=0.05, caster=to_float)
     agree_probability: float = field("agree_probability", default=0.7, caster=to_float)
     test_group_ids: List[int] = field("test_group_ids", default=[], caster=ToListMapCaster(to_list, to_int))

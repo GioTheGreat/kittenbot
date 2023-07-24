@@ -1,5 +1,3 @@
-import os
-
 from pymorphy3.analyzer import MorphAnalyzer
 from sqlalchemy import create_engine
 from telegram.ext import ApplicationBuilder, filters, CommandHandler, MessageHandler
@@ -27,12 +25,7 @@ def main():
         print("Token is not set, exit")
         exit(1)
 
-    try:
-        os.remove("bot.sqlite")
-    except Exception:
-        pass
-    engine = create_engine("sqlite:///bot.sqlite")
-
+    engine = create_engine(config.db_connection_string)
     entities.User.metadata.create_all(engine, checkfirst=True)
     entities.Chat.metadata.create_all(engine, checkfirst=True)
     entities.chat_users.metadata.create_all(engine, checkfirst=True)
