@@ -3,6 +3,7 @@ from datetime import timedelta, datetime
 from typing import Any, Optional, List, Dict, Callable
 
 from attr import define
+from dateutil.relativedelta import relativedelta
 from telegram import Update
 
 from .actions import Action, Reply, TextReplyContent
@@ -100,20 +101,22 @@ class SlowCommandHandler:
         _update_dict_entry(args_dict, "until_date", self._parse_datetime)
         return SlowCommandArgs(**args_dict)
 
-    def _parse_interval(self, arg: str) -> timedelta:
+    def _parse_interval(self, arg: str) -> timedelta | relativedelta:
         match = re.match(_INTERVAL_PATTERN, arg)
+        amount = int(match.group("amount"))
         match matched_unit := match.group("unit"):
-            case "s":
+            case "s" | "second" | "seconds":
                 unit = "seconds"
-            case "m":
+            case "m" | "minutes" | "minute":
                 unit = "minutes"
-            case "h":
+            case "h" | "hour" | "hours":
                 unit = "hours"
-            case "d":
+            case "d" | "days" | "day":
                 unit = "days"
+            case "M" | "month" | "months":
+                return relativedelta(months=amount)
             case _:
                 raise Exception(f"Unknown interval unit: {matched_unit}")
-        amount = int(match.group("amount"))
         return timedelta(**{unit: amount})
 
     def _parse_datetime(self, arg: str) -> datetime:
