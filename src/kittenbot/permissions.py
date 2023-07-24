@@ -25,3 +25,7 @@ def whitelist(user_ids: List[int]) -> SecurityFunc:
             return SecurityAction.DENY
         return SecurityAction.ALLOW
     return wrapped
+
+
+def allow_all(update: Update, context: TContext) -> SecurityAction:
+    return SecurityAction.ALLOW

@@ -37,13 +37,14 @@ class KittenMessageHandler:
         self.noun_template = noun_template
         self.bot_names = bot_names
         self._accusative_pattern = re.compile(noun_template.substitute(subj=r"(?P<subj>\w+)"))
+        self._bot_name_pattern = re.compile("(" + "|".join(name + "ы?" for name in bot_names) + ")")
 
     def handle(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Action]:
         if update.message is None or update.message.text is None:
             return None
         normalized_text = self._normalize_text(update.message.text)
         if subj := self._find_subj(normalized_text):
-            if ((subj in self.bot_names or subj.rstrip("ы") in self.bot_names)
+            if (re.fullmatch(self._bot_name_pattern, subj)
                     or (subj == "ты" and self._is_reply_to_bot_message(update))):
                 return self.reply_with_random_gif(update.message, "izvinis")
             else:

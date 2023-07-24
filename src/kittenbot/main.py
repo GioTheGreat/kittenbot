@@ -6,12 +6,12 @@ from telegram.ext import ApplicationBuilder, filters, CommandHandler, MessageHan
 
 from .admin_handler import get_user_id_handler
 from .config import BotConfig
-from .pipelines import secure_pipeline, insecure_pipeline
+from .pipelines import pipeline
 from .message_handler import KittenMessageHandler
 from .history import History
 from .interpreter import Interpreter
 from .language_processing import Nlp
-from .permissions import whitelist
+from .permissions import allow_all, whitelist
 from .ping_handler import ping
 from .random_generator import RandomGenerator
 from .resources import ProdResources
@@ -30,12 +30,6 @@ def main():
         pass
     engine = create_engine("sqlite:///bot.sqlite")
     hist = History(engine)
-
-    app = (ApplicationBuilder()
-           .concurrent_updates(StoringUpdateProcessorWrapper(hist))
-           .token(config.token)
-           .build())
-
     rand_gen = RandomGenerator()
     resources = ProdResources(rand_gen, "resources")
     self_user_id = int(config.token.split(":")[0])
@@ -51,12 +45,17 @@ def main():
         config.noun_template,
     )
 
+    app = (ApplicationBuilder()
+           .concurrent_updates(StoringUpdateProcessorWrapper(hist))
+           .token(config.token)
+           .build())
+
     interpreter = Interpreter(app.bot)
     security = whitelist(config.admin_user_ids)
     app.add_handlers([
-        CommandHandler("ping", insecure_pipeline(ping, interpreter)),
-        CommandHandler("get_user_id", secure_pipeline(security, get_user_id_handler(hist), interpreter)),
-        MessageHandler(~filters.COMMAND, insecure_pipeline(message_handler.handle, interpreter)),
+        CommandHandler("ping", pipeline(allow_all, ping, interpreter)),
+        CommandHandler("get_user_id", pipeline(security, get_user_id_handler(hist), interpreter)),
+        MessageHandler(~filters.COMMAND, pipeline(allow_all, message_handler.handle, interpreter)),
     ])
     print("Bot is listening")
     app.run_polling()
