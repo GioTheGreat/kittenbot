@@ -1,22 +1,24 @@
+from pathlib import Path
+
 from pymorphy3.analyzer import MorphAnalyzer
 from sqlalchemy import create_engine
 from telegram.ext import ApplicationBuilder, filters, CommandHandler, MessageHandler
 
-from . import entities
 from .admin_handler import get_user_id_handler, SlowCommandHandler
 from .clock import ProdClock
 from .config import BotConfig
-from .pipelines import pipeline, slowmode_support
-from .message_handler import KittenMessageHandler
+from .db import run_migrations
 from .history import History
 from .interpreter import Interpreter
 from .language_processing import Nlp
+from .message_handler import KittenMessageHandler
+from .middleware import StoringUpdateProcessorWrapper
 from .permissions import allow_all, whitelist
 from .ping_handler import ping
+from .pipelines import pipeline, slowmode_support
 from .random_generator import RandomGenerator
 from .resources import ProdResources
 from .slowmode_user_repository import SlowmodeUserRepository
-from .middleware import StoringUpdateProcessorWrapper
 
 
 def main():
@@ -26,10 +28,8 @@ def main():
         exit(1)
 
     engine = create_engine(config.db_connection_string)
-    entities.User.metadata.create_all(engine, checkfirst=True)
-    entities.Chat.metadata.create_all(engine, checkfirst=True)
-    entities.chat_users.metadata.create_all(engine, checkfirst=True)
-    entities.SlowmodeUser.metadata.create_all(engine, checkfirst=True)
+    migrations_path = str(Path(__file__).parent / "migrations")
+    run_migrations(migrations_path, config.db_connection_string)
 
     hist = History(engine)
     rand_gen = RandomGenerator()

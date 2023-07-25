@@ -22,6 +22,7 @@ class History:
             user = self._get_user_by_id(session, message.from_user.id)
             if not user:
                 user = entities.User(id=message.from_user.id, username=message.from_user.username)
+                print(f"Adding new user id {user.id}")
                 session.add(user)
 
             is_known_relation_user_to_chat = session.query(
