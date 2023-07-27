@@ -87,12 +87,18 @@ class KittenMessageHandler:
         if (self.random_generator.get_bool(self.action_probability) is False
                 and update.message.chat.id not in self.test_group_ids):
             return None
-        noun_chance = self.random_generator.get_int(1, 100) * self.noun_weight
-        verb_chance = self.random_generator.get_int(1, 100) * self.verb_weight
-        if noun_chance > verb_chance:
-            reply_content = self._format_template(self.random_generator.choice(nouns))
+        if nouns and verbs:
+            noun_chance = self.random_generator.get_int(1, 100) * self.noun_weight
+            verb_chance = self.random_generator.get_int(1, 100) * self.verb_weight
+            if noun_chance > verb_chance:
+                word = self.random_generator.choice(nouns)
+            else:
+                word = self.random_generator.choice(verbs)
+        elif nouns:
+            word = self.random_generator.choice(nouns)
         else:
-            reply_content = self._format_template(self.random_generator.choice(verbs))
+            word = self.random_generator.choice(verbs)
+        reply_content = self._format_template(word)
         return Reply(update.message, TextReplyContent(reply_content))
 
     def _format_template(self, word: Parse) -> str:

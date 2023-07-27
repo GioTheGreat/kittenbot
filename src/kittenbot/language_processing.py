@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Optional
 
 from attr import define
 from pymorphy3 import MorphAnalyzer
@@ -22,10 +22,14 @@ class Nlp:
     def parse_str(self, text: str) -> Iterable[Parse]:
         return map(lambda w: self.analyzer.parse(w)[0], simple_word_tokenize(text))
 
-    def is_noun(self, word: Parse) -> bool:
+    def is_noun(self, word: Optional[Parse]) -> bool:
+        if not word or not word.tag:
+            return False
         return word.tag.POS == "NOUN"
 
-    def is_verb(self, word: Parse) -> bool:
+    def is_verb(self, word: Optional[Parse]) -> bool:
+        if not word or not word.tag:
+            return False
         return word.tag.POS in ("VERB", "INFN")
 
     def inflect_to_imperative(self, word: Parse) -> Parse:
