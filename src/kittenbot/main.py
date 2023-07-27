@@ -4,7 +4,7 @@ from pymorphy3.analyzer import MorphAnalyzer
 from sqlalchemy import create_engine
 from telegram.ext import ApplicationBuilder, filters, CommandHandler, MessageHandler
 
-from .admin_handler import get_user_id_handler, SlowCommandHandler
+from .admin_handler import get_user_id_handler, SlowCommandHandler, demo_handler
 from .clock import ProdClock
 from .config import BotConfig
 from .db import run_migrations
@@ -45,6 +45,9 @@ def main():
         config.test_group_ids,
         config.bot_names,
         config.noun_template,
+        config.noun_weight,
+        config.verb_template,
+        config.verb_weight,
     )
 
     app = (ApplicationBuilder()
@@ -61,6 +64,7 @@ def main():
         CommandHandler("ping", pipeline(allow_all, ping, interpreter)),
         CommandHandler("get_user_id", pipeline(security, get_user_id_handler(hist), interpreter)),
         CommandHandler("slow", pipeline(security, slow_handler, interpreter)),
+        CommandHandler("demo", pipeline(security, demo_handler(message_handler), interpreter)),
         MessageHandler(
             ~filters.COMMAND,
             pipeline(allow_all, slowmode_support(slowmode_user_repository, clock)(message_handler), interpreter)),

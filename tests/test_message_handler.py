@@ -71,7 +71,7 @@ def test_verb(handler):
     handler.verb_weight = 1.0
     handler.noun_weight = 0.0
     handler.action_probability = 1.0
-    user_message = make_message("купить")
+    user_message = make_message("купят")
     actual = handler.handle(Update(0, user_message), None)
     expected = Reply(user_message, TextReplyContent("купи себе котика"))
     assert actual == expected

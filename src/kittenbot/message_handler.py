@@ -3,6 +3,7 @@ from string import Template
 from typing import List, Optional
 
 from attr import define
+from pymorphy3.analyzer import Parse
 from telegram import Update, Message
 from telegram.ext import ContextTypes
 
@@ -44,6 +45,7 @@ class KittenMessageHandler:
         self.noun_weight = noun_weight
         self.verb_template = verb_template
         self.verb_weight = verb_weight
+        self.demo_words = []
 
     def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Action]:
         return self.handle(update, context)
@@ -77,18 +79,31 @@ class KittenMessageHandler:
         verbs = list(self.nlp.get_verbs_from_str(update.message.text))
         if not nouns and not verbs:
             return None
+        demo_word: Optional[Parse] = next(filter(lambda w: w.word in self.demo_words, nouns + verbs), None)
+        if demo_word:
+            reply_content = self._format_template(demo_word)
+            self.demo_words.remove(demo_word.word)
+            return Reply(update.message, TextReplyContent(reply_content))
         if (self.random_generator.get_bool(self.action_probability) is False
                 and update.message.chat.id not in self.test_group_ids):
             return None
         noun_chance = self.random_generator.get_int(1, 100) * self.noun_weight
         verb_chance = self.random_generator.get_int(1, 100) * self.verb_weight
         if noun_chance > verb_chance:
-            subj = self.random_generator.choice(nouns)
-            subj_inflected = self.nlp.inflect_to_plur(subj).word
-            return Reply(update.message, TextReplyContent(self.noun_template.substitute(subj=subj_inflected)))
-        verb = self.random_generator.choice(verbs)
-        verb_inflected = self.nlp.inflect_to_imperative(verb).word
-        return Reply(update.message, TextReplyContent(self.verb_template.substitute(verb=verb_inflected)))
+            reply_content = self._format_template(self.random_generator.choice(nouns))
+        else:
+            reply_content = self._format_template(self.random_generator.choice(verbs))
+        return Reply(update.message, TextReplyContent(reply_content))
+
+    def _format_template(self, word: Parse) -> str:
+        if self.nlp.is_noun(word):
+            subj_inflected = self.nlp.inflect_to_plur(word).word
+            return self.noun_template.substitute(subj=subj_inflected)
+        verb_inflected = self.nlp.inflect_to_imperative(word).word
+        return self.verb_template.substitute(verb=verb_inflected)
+
+    def add_demo_word(self, word: str) -> None:
+        self.demo_words.append(word)
 
     def _normalize_text(self, text: str) -> str:
         return text.lower()

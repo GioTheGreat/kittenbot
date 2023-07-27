@@ -9,6 +9,7 @@ from telegram import Update
 from .actions import Action, Reply, TextReplyContent
 from .clock import Clock
 from .history import History
+from .message_handler import KittenMessageHandler
 from .slowmode_user_repository import SlowmodeUserRepository
 from .types import HandlerFunc
 
@@ -24,6 +25,19 @@ def get_user_id_handler(hist: History) -> HandlerFunc:
             else:
                 return Reply(update.message, TextReplyContent(f"there are many ids matching username {username}"))
         return Reply(update.message, TextReplyContent(f"user id for username {username} not found"))
+    return _handle
+
+
+def demo_handler(message_handler: KittenMessageHandler) -> HandlerFunc:
+    def _handle(update: Update, context: Any) -> Optional[Action]:
+        command_args = update.message.text.split(" ")[1:]
+        subcommand = command_args[0]
+        if subcommand == "add_word":
+            word = command_args[1]
+            message_handler.add_demo_word(word)
+            return Reply(update.message, TextReplyContent(f"new demo word added: {word}"))
+        else:
+            return Reply(update.message, TextReplyContent(f"unknown subcommand : {subcommand}"))
     return _handle
 
 
