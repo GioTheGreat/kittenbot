@@ -26,6 +26,9 @@ class KittenMessageHandler:
             test_group_ids: List[int],
             bot_names: List[str],
             noun_template: Template,
+            noun_weight: float,
+            verb_template: Template,
+            verb_weight: float,
     ):
         self.random_generator = random_generator
         self.resources = resources
@@ -38,6 +41,9 @@ class KittenMessageHandler:
         self.bot_names = bot_names
         self._accusative_pattern = re.compile(noun_template.substitute(subj=r"(?P<subj>\w+)"))
         self._bot_name_pattern = re.compile("(" + "|".join(name + "ы?" for name in bot_names) + ")")
+        self.noun_weight = noun_weight
+        self.verb_template = verb_template
+        self.verb_weight = verb_weight
 
     def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Action]:
         return self.handle(update, context)
@@ -67,15 +73,22 @@ class KittenMessageHandler:
     def react_to_random_word(self, update: Update) -> Optional[Action]:
         if update.message.message_thread_id:
             return None
+        nouns = list(self.nlp.get_nouns_from_str(update.message.text))
+        verbs = list(self.nlp.get_verbs_from_str(update.message.text))
+        if not nouns and not verbs:
+            return None
         if (self.random_generator.get_bool(self.action_probability) is False
                 and update.message.chat.id not in self.test_group_ids):
             return None
-        nouns = list(self.nlp.get_nouns_from_str(update.message.text))
-        if not nouns:
-            return None
-        subj = self.random_generator.choice(nouns)
-        subj_inflected = self.nlp.inflect_to_plur(subj).word
-        return Reply(update.message, TextReplyContent(self.noun_template.substitute(subj=subj_inflected)))
+        noun_chance = self.random_generator.get_int(1, 100) * self.noun_weight
+        verb_chance = self.random_generator.get_int(1, 100) * self.verb_weight
+        if noun_chance > verb_chance:
+            subj = self.random_generator.choice(nouns)
+            subj_inflected = self.nlp.inflect_to_plur(subj).word
+            return Reply(update.message, TextReplyContent(self.noun_template.substitute(subj=subj_inflected)))
+        verb = self.random_generator.choice(verbs)
+        verb_inflected = self.nlp.inflect_to_imperative(verb).word
+        return Reply(update.message, TextReplyContent(self.verb_template.substitute(verb=verb_inflected)))
 
     def _normalize_text(self, text: str) -> str:
         return text.lower()

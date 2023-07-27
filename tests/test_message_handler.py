@@ -7,7 +7,7 @@ from attr import define, field
 from pymorphy3 import MorphAnalyzer
 from telegram import Update, Message, Chat, User
 
-from kittenbot.actions import Reply, DocumentReplyContent
+from kittenbot.actions import Reply, DocumentReplyContent, TextReplyContent
 from kittenbot.message_handler import KittenMessageHandler
 from kittenbot.language_processing import Nlp
 from kittenbot.random_generator import RandomGenerator
@@ -44,7 +44,10 @@ def handler(morph_analyzer):
         1.0,
         [],
         ["котобот"],
-        Template("$subj для котиков")
+        Template("$subj для котиков"),
+        noun_weight=1.0,
+        verb_template=Template("$verb себе котика"),
+        verb_weight=1.0,
     )
 
 
@@ -61,6 +64,16 @@ def test_izvinis_you(handler):
     user_message = MessageBuilder("ты для котиков").reply_to_message(bot_message).build()
     actual = handler.handle(Update(0, user_message), None)
     expected = Reply(user_message, DocumentReplyContent("izvinis", b"test"))
+    assert actual == expected
+
+
+def test_verb(handler):
+    handler.verb_weight = 1.0
+    handler.noun_weight = 0.0
+    handler.action_probability = 1.0
+    user_message = make_message("купить")
+    actual = handler.handle(Update(0, user_message), None)
+    expected = Reply(user_message, TextReplyContent("купи себе котика"))
     assert actual == expected
 
 

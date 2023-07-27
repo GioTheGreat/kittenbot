@@ -11,6 +11,9 @@ class RandomGenerator:
     def get_bool(self, probability: float) -> bool:
         return random.random() <= probability
 
+    def get_int(self, min_inclusive: int, max_inclusive: int):
+        return random.randint(min_inclusive, max_inclusive)
+
     def choice(self, items: List[T]) -> Optional[T]:
         if not items:
             return None
