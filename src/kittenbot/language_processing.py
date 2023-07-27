@@ -29,6 +29,9 @@ class Nlp:
         return word.tag.POS in ("VERB", "INFN")
 
     def inflect_to_imperative(self, word: Parse) -> Parse:
+        perf_form = word.inflect({"impr", "sing", "excl", "perf"})
+        if perf_form:
+            return perf_form
         return word.inflect({"impr", "sing", "excl"})
 
 
