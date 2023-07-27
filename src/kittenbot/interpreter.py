@@ -1,4 +1,5 @@
 from attr import define
+from loguru import logger
 from telegram import Bot, ChatPermissions
 
 from .actions import Action, Reply, DocumentReplyContent, TextReplyContent, RestrictMember, CompositeAction
@@ -9,7 +10,7 @@ class Interpreter:
     bot: Bot
 
     async def run_action(self, action: Action) -> None:
-        print(f"running action {action}")
+        logger.debug("running action {action}", action=action)
         match action:
             case Reply(reply_to_message, content):
                 match content:
@@ -34,4 +35,4 @@ class Interpreter:
                 for part in parts:
                     await self.run_action(part)
             case _:
-                raise Exception(f"Unknown action: {action}")
+                logger.error("unknown action: {action}", action=action)

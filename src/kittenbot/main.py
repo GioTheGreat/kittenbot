@@ -1,5 +1,7 @@
 from pathlib import Path
+from sys import stdout
 
+from loguru import logger
 from pymorphy3.analyzer import MorphAnalyzer
 from sqlalchemy import create_engine
 from telegram.ext import ApplicationBuilder, filters, CommandHandler, MessageHandler
@@ -22,15 +24,19 @@ from .slowmode_user_repository import SlowmodeUserRepository
 
 
 def main():
+    logger.remove(0)
+    logger.add(stdout, backtrace=True, diagnose=True)
+    logger.info("starting")
     config = BotConfig()
+
     if config.token is None:
-        print("Token is not set, exit")
+        logger.error("token is not set, exit")
         exit(1)
 
-    engine = create_engine(config.db_connection_string)
     migrations_path = str(Path(__file__).parent / "migrations")
     run_migrations(migrations_path, config.db_connection_string)
 
+    engine = create_engine(config.db_connection_string)
     hist = History(engine)
     rand_gen = RandomGenerator()
     resources = ProdResources(rand_gen, "resources")
@@ -69,5 +75,5 @@ def main():
             ~filters.COMMAND,
             pipeline(allow_all, slowmode_support(slowmode_user_repository, clock)(message_handler), interpreter)),
     ])
-    print("Bot is listening")
+    logger.info("bot is listening")
     app.run_polling()

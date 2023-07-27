@@ -4,6 +4,7 @@ from typing import Any, Optional, List, Dict, Callable
 
 from attr import define
 from dateutil.relativedelta import relativedelta
+from loguru import logger
 from telegram import Update
 
 from .actions import Action, Reply, TextReplyContent
@@ -54,18 +55,18 @@ class SlowCommandHandler:
         command_args = update.message.text.split(" ")[1:]
         subcommand = command_args[0]
         parsed_args = self._parse_args(command_args[1:])
-        print(f"parsed args for slow command: {parsed_args}")
+        logger.debug("parsed args for slow command: {parsed_args}", parsed_args=parsed_args)
         username = self.hist.get_user_name(parsed_args.user_id)
         match subcommand:
             case "create":
-                print("creating restriction")
+                logger.info("creating restriction")
                 self.repository.create_restriction(
                     chat_id=parsed_args.chat_id,
                     user_id=parsed_args.user_id,
                     interval=parsed_args.interval,
                     until_date=parsed_args.until_date
                 )
-                print("restriction created")
+                logger.info("restriction created")
                 reply_content = TextReplyContent(
                     _format_restriction(
                         parsed_args.user_id,

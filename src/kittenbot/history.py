@@ -1,6 +1,7 @@
 from typing import Optional, List
 
 from attr import define
+from loguru import logger
 from sqlalchemy import Engine, select, exists, insert
 from sqlalchemy.orm import Session, joinedload
 from telegram import Message
@@ -17,12 +18,12 @@ class History:
             chat = entities.Chat(id=message.chat_id)
             is_new_chat = self._is_new_chat(session, message)
             if is_new_chat:
-                print(f"adding new chat id {chat.id}")
+                logger.debug("adding new chat id {chat_id}", chat_id=chat.id)
                 session.add(chat)
             user = self._get_user_by_id(session, message.from_user.id)
             if not user:
                 user = entities.User(id=message.from_user.id, username=message.from_user.username)
-                print(f"Adding new user id {user.id}")
+                logger.debug("adding new user id {user_id}", user_id=user.id)
                 session.add(user)
 
             is_known_relation_user_to_chat = session.query(

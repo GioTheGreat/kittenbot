@@ -1,6 +1,6 @@
-import traceback
 from typing import Coroutine, Any, Callable, Optional
 
+from loguru import logger
 from telegram import Update
 
 from .actions import Action, RestrictMember, CompositeAction
@@ -19,15 +19,13 @@ def pipeline(
         interpreter: Interpreter
 ) -> PipelineFunc:
     async def wrapped(update: Update, context: TContext) -> None:
-        try:
+        with logger.catch():
             if security(update, context) == SecurityAction.DENY:
                 return
             action = handler(update, context)
             if not action:
                 return
             await interpreter.run_action(action)
-        except Exception as e:
-            traceback.print_exception(e)
     return wrapped
 
 

@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List, Callable
 
+from loguru import logger
 from telegram import Update
 
 from .types import TContext
@@ -21,7 +22,7 @@ def whitelist(user_ids: List[int]) -> SecurityFunc:
         if not update.effective_user:
             return SecurityAction.UNDEFINED
         if update.effective_user.id not in user_ids:
-            print("permission denied")
+            logger.info("permission denied")
             return SecurityAction.DENY
         return SecurityAction.ALLOW
     return wrapped
