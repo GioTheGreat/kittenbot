@@ -32,6 +32,14 @@ class Nlp:
         perf_form = word.inflect({"impr", "sing", "excl", "perf"})
         if perf_form:
             return perf_form
+        imperf_form = word.inflect({"impr", "sing", "excl"})
+        guessed_perf = self.analyzer.parse("за" + imperf_form.word)
+        if guessed_perf:
+            guessed_perf = guessed_perf[0]
+        else:
+            guessed_perf = None
+        if guessed_perf and guessed_perf.is_known:
+            return guessed_perf
         return word.inflect({"impr", "sing", "excl"})
 
 
