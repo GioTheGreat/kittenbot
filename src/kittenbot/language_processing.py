@@ -36,6 +36,16 @@ class Nlp:
         return "tran" in word.tag
 
     def inflect_to_imperative(self, word: Parse) -> Parse:
+        removable_prefixes = ["не"]
+        word_prefixes = []
+        w = word.word
+        for prefix in removable_prefixes:
+            if w.startswith(prefix):
+                word_prefixes.append(prefix)
+                w = w[len(prefix):]
+        if word_prefixes:
+            if new_word := next(iter(self.analyzer.parse(w)), None):
+                word = new_word
         perf_form = word.inflect({"impr", "sing", "excl", "perf"})
         if perf_form:
             return perf_form

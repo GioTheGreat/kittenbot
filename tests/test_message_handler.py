@@ -84,6 +84,13 @@ def test_hello(handler):
     assert actual == expected
 
 
+def test_affirmative_conversion(handler):
+    user_message = make_message("недобрал")
+    actual = handler.handle(Update(0, user_message), None)
+    expected = Reply(user_message, TextReplyContent("добери себе котика"))
+    assert actual == expected
+
+
 def make_message(text: str) -> Message:
     return Message(0, datetime.datetime.now(), Chat(0, "test"), text=text)
 
