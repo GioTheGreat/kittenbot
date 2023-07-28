@@ -3,6 +3,7 @@ from string import Template
 from typing import List, Optional
 
 from attr import define
+from loguru import logger
 from pymorphy3.analyzer import Parse
 from telegram import Update, Message
 from telegram.ext import ContextTypes
@@ -99,6 +100,7 @@ class KittenMessageHandler:
         else:
             word = self.random_generator.choice(verbs)
         reply_content = self._format_template(word)
+        logger.info(f"reacting with message {reply_content}")
         return Reply(update.message, TextReplyContent(reply_content))
 
     def _format_template(self, word: Parse) -> str:
