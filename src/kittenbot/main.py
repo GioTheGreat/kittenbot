@@ -54,6 +54,7 @@ def main():
         config.noun_weight,
         config.verb_template,
         config.verb_weight,
+        config.answer_by_name_probability,
     )
 
     app = (ApplicationBuilder()

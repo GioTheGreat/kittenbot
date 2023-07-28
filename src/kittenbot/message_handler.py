@@ -31,6 +31,7 @@ class KittenMessageHandler:
             noun_weight: float,
             verb_template: Template,
             verb_weight: float,
+            answer_by_name_probability: float,
     ):
         self.random_generator = random_generator
         self.resources = resources
@@ -42,11 +43,15 @@ class KittenMessageHandler:
         self.noun_template = noun_template
         self.bot_names = bot_names
         self._accusative_pattern = re.compile(noun_template.substitute(subj=r"(?P<subj>\w+)"))
-        self._bot_name_pattern = re.compile("(" + "|".join(name + "ы?" for name in bot_names) + ")")
+        self._bot_name_pattern = re.compile(
+            "(" + "|".join(name + "ы?" for name in bot_names) + ")",
+            re.UNICODE | re.IGNORECASE
+        )
         self.noun_weight = noun_weight
         self.verb_template = verb_template
         self.verb_weight = verb_weight
         self.demo_words = []
+        self.answer_by_name_probability = answer_by_name_probability
 
     def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Action]:
         return self.handle(update, context)
@@ -76,7 +81,11 @@ class KittenMessageHandler:
     def react_to_random_word(self, update: Update) -> Optional[Action]:
         if update.message.message_thread_id:
             return None
-        nouns = list(self.nlp.get_nouns_from_str(update.message.text))
+        nouns = [
+            w
+            for w in self.nlp.get_nouns_from_str(update.message.text)
+            if not re.search(self._bot_name_pattern, w.word)
+        ]
         verbs = list(self.nlp.get_transitive_verbs_from_str(update.message.text))
         if not nouns and not verbs:
             return None
@@ -85,8 +94,7 @@ class KittenMessageHandler:
             reply_content = self._format_template(demo_word)
             self.demo_words.remove(demo_word.word)
             return Reply(update.message, TextReplyContent(reply_content))
-        if (self.random_generator.get_bool(self.action_probability) is False
-                and update.message.chat.id not in self.test_group_ids):
+        if not self._should_react_to_message(update):
             return None
         if nouns and verbs:
             noun_chance = self.random_generator.get_int(1, 100) * self.noun_weight
@@ -102,6 +110,16 @@ class KittenMessageHandler:
         reply_content = self._format_template(word)
         logger.info(f"reacting with message {reply_content}")
         return Reply(update.message, TextReplyContent(reply_content))
+
+    def _should_react_to_message(self, update: Update) -> bool:
+        if update.message.chat.id in self.test_group_ids:
+            return True
+        if (re.search(self._bot_name_pattern, update.message.text.lower())
+                and self.random_generator.get_bool(self.answer_by_name_probability)):
+            return True
+        if self.random_generator.get_bool(self.action_probability):
+            return True
+        return False
 
     def _format_template(self, word: Parse) -> str:
         if self.nlp.is_noun(word):

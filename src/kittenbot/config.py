@@ -36,3 +36,4 @@ class BotConfig(Config):
     verb_template: Template = field("verb_template", default=Template("$verb себе котика"), caster=to_template)
     noun_weight: float = field("noun_weight", default=1., caster=to_float)
     verb_weight: float = field("verb_weight", default=1., caster=to_float)
+    answer_by_name_probability: float = field("answer_by_name_probability", default=0.5, caster=to_float)

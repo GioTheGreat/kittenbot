@@ -48,6 +48,7 @@ def handler(morph_analyzer):
         noun_weight=1.0,
         verb_template=Template("$verb себе котика"),
         verb_weight=1.0,
+        answer_by_name_probability=1.0
     )
 
 
@@ -88,6 +89,14 @@ def test_affirmative_conversion(handler):
     user_message = make_message("недобрал")
     actual = handler.handle(Update(0, user_message), None)
     expected = Reply(user_message, TextReplyContent("добери себе котика"))
+    assert actual == expected
+
+
+def test_answer_by_name(handler):
+    handler.action_probability = 0.0
+    user_message = make_message("котобот, тест")
+    actual = handler.handle(Update(0, user_message), None)
+    expected = Reply(user_message, TextReplyContent("тесты для котиков"))
     assert actual == expected
 
 
