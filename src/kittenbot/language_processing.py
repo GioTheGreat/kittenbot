@@ -16,8 +16,8 @@ class Nlp:
     def inflect_to_plur(self, word: Parse) -> Parse:
         return word.inflect({"plur", "nomn"})
 
-    def get_verbs_from_str(self, text: str) -> Iterable[Parse]:
-        return filter(self.is_verb, self.parse_str(text))
+    def get_transitive_verbs_from_str(self, text: str) -> Iterable[Parse]:
+        return filter(lambda w: self.is_verb(w) and self.is_transitive(w), self.parse_str(text))
 
     def parse_str(self, text: str) -> Iterable[Parse]:
         return map(lambda w: self.analyzer.parse(w)[0], simple_word_tokenize(text))
@@ -31,6 +31,9 @@ class Nlp:
         if not word or not word.tag:
             return False
         return word.tag.POS in ("VERB", "INFN")
+
+    def is_transitive(self, word: Parse) -> bool:
+        return "tran" in word.tag
 
     def inflect_to_imperative(self, word: Parse) -> Parse:
         perf_form = word.inflect({"impr", "sing", "excl", "perf"})

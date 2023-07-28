@@ -76,7 +76,7 @@ class KittenMessageHandler:
         if update.message.message_thread_id:
             return None
         nouns = list(self.nlp.get_nouns_from_str(update.message.text))
-        verbs = list(self.nlp.get_verbs_from_str(update.message.text))
+        verbs = list(self.nlp.get_transitive_verbs_from_str(update.message.text))
         if not nouns and not verbs:
             return None
         demo_word: Optional[Parse] = next(filter(lambda w: w.word in self.demo_words, nouns + verbs), None)
