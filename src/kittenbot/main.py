@@ -21,6 +21,7 @@ from .pipelines import pipeline, slowmode_support
 from .random_generator import RandomGenerator
 from .resources import ProdResources
 from .slowmode_user_repository import SlowmodeUserRepository
+from .util_handlers import parse_handler, inflect_handler
 
 
 def main():
@@ -41,10 +42,11 @@ def main():
     rand_gen = RandomGenerator()
     resources = ProdResources(rand_gen, "resources")
     self_user_id = int(config.token.split(":")[0])
+    morph_analyzer = MorphAnalyzer()
     message_handler = KittenMessageHandler(
         rand_gen,
         resources,
-        Nlp(MorphAnalyzer()),
+        Nlp(morph_analyzer),
         self_user_id,
         config.probability,
         config.agree_probability,
@@ -73,6 +75,8 @@ def main():
         CommandHandler("get_user_id", pipeline(security, get_user_id_handler(hist), interpreter)),
         CommandHandler("slow", pipeline(security, slow_handler, interpreter)),
         CommandHandler("demo", pipeline(security, demo_handler(message_handler), interpreter)),
+        CommandHandler("parse", pipeline(allow_all, parse_handler(morph_analyzer), interpreter)),
+        CommandHandler("inflect", pipeline(allow_all, inflect_handler(morph_analyzer), interpreter)),
         MessageHandler(
             ~filters.COMMAND,
             pipeline(allow_all, slowmode_support(slowmode_user_repository, clock)(message_handler), interpreter)),
