@@ -55,6 +55,7 @@ def main():
         config.verb_template,
         config.verb_weight,
         config.answer_by_name_probability,
+        config.reaction_stopwords,
     )
 
     app = (ApplicationBuilder()

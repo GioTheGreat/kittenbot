@@ -32,6 +32,7 @@ class KittenMessageHandler:
             verb_template: Template,
             verb_weight: float,
             answer_by_name_probability: float,
+            reaction_stopwords: List[str],
     ):
         self.random_generator = random_generator
         self.resources = resources
@@ -52,6 +53,7 @@ class KittenMessageHandler:
         self.verb_weight = verb_weight
         self.demo_words = []
         self.answer_by_name_probability = answer_by_name_probability
+        self.reaction_stopwords = reaction_stopwords
 
     def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[Action]:
         return self.handle(update, context)
@@ -84,9 +86,13 @@ class KittenMessageHandler:
         nouns = [
             w
             for w in self.nlp.get_nouns_from_str(update.message.text)
-            if not re.search(self._bot_name_pattern, w.word)
+            if not re.search(self._bot_name_pattern, w.word) and w.word not in self.reaction_stopwords
         ]
-        verbs = list(self.nlp.get_transitive_verbs_from_str(update.message.text))
+        verbs = [
+            w
+            for w in self.nlp.get_transitive_verbs_from_str(update.message.text)
+            if w.word not in self.reaction_stopwords
+        ]
         if not nouns and not verbs:
             return None
         demo_word: Optional[Parse] = next(filter(lambda w: w.word in self.demo_words, nouns + verbs), None)
